@@ -25,7 +25,7 @@ export function Footer() {
 						<div className="flex items-center">
 							<SewingPinIcon className="mx-12 scale-[2] text-slate-100" />
 							<div className="text-md w-2/3 text-slate-100 max-md:text-sm">
-								Ramdeobaba University, Ramdeo Tekdi, Gittikhadan, Katol Road, Nagpur - 440013
+								Ramdeobaba University Nagpur, Ramdeo Tekdi, Gittikhadan, Katol Road, Nagpur - 440013
 							</div>
 						</div>
 						<div className="flex items-center py-4">
