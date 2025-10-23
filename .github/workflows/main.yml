@@ -1,39 +1,45 @@
-name: Deploying changes to ECR and rolling it  
+name: Deploying changes to ECR and rolling it
 
 on:
   push:
     branches:
-      - main 
+      - main
 
 jobs:
-  build-and-tag: 
+  build-and-tag:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: AWS credentials  
+      - name: AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
-        with: 
+        with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-north-1
 
-      - name: Login to Amazon ECR 
-        id: login-ecr 
+      - name: Login to Amazon ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: task-11
 
       - name: Set up environment variables
         id: set-env
         run: echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c 1-8)" >> $GITHUB_ENV
+        env:
+          ECR_REPOSITORY: task-11
 
       - name: Build and Tag Docker Image
         run: |
-          IMAGE_LATEST="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest"
-          IMAGE_TAGGED="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+          # --- USE steps.login-ecr.outputs.registry DIRECTLY HERE ---
+          ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
+          ECR_REPOSITORY="${{ env.ECR_REPOSITORY }}" # Use ECR_REPOSITORY from env
+          IMAGE_LATEST="${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+          IMAGE_TAGGED="${ECR_REGISTRY}/${ECR_REPOSITORY}:${{ env.IMAGE_TAG }}"
+
+          echo "Building and tagging: $IMAGE_LATEST and $IMAGE_TAGGED" # Optional: for debugging
           docker build -t $IMAGE_LATEST .
           docker tag $IMAGE_LATEST $IMAGE_TAGGED
+        env:
+          ECR_REPOSITORY: task-11 
