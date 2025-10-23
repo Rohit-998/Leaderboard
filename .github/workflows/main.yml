@@ -30,16 +30,23 @@ jobs:
         env:
           ECR_REPOSITORY: task-11
 
-      - name: Build and Tag Docker Image
+      - name: Build, Tag, and Push Docker Image
         run: |
-          # --- USE steps.login-ecr.outputs.registry DIRECTLY HERE ---
           ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
-          ECR_REPOSITORY="${{ env.ECR_REPOSITORY }}" # Use ECR_REPOSITORY from env
+          ECR_REPOSITORY="${{ env.ECR_REPOSITORY }}"
           IMAGE_LATEST="${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
           IMAGE_TAGGED="${ECR_REGISTRY}/${ECR_REPOSITORY}:${{ env.IMAGE_TAG }}"
 
-          echo "Building and tagging: $IMAGE_LATEST and $IMAGE_TAGGED" # Optional: for debugging
+          echo "Building Docker images..."
           docker build -t $IMAGE_LATEST .
+
+          echo "Tagging images..."
           docker tag $IMAGE_LATEST $IMAGE_TAGGED
+
+          echo "Pushing images to ECR..."
+          docker push $IMAGE_LATEST
+          docker push $IMAGE_TAGGED
+
+          echo "✅ Successfully pushed: $IMAGE_LATEST and $IMAGE_TAGGED"
         env:
-          ECR_REPOSITORY: task-11 
+          ECR_REPOSITORY: task-11
