@@ -1,26 +1,21 @@
 import Redis from "ioredis";
 
-const redisHost = process.env.REDIS_HOST!;
-const redisPort = Number(process.env.REDIS_PORT || 6379);
+let client: Redis | null = null;
 
-// Make a singleton Redis instance safely
-let client: Redis;
+// Only initialize Redis if we are NOT in build-time (like in Docker build)
+if (process.env.NODE_ENV !== "production" || process.env.REDIS_HOST) {
+  const redisHost = process.env.REDIS_HOST!;
+  const redisPort = Number(process.env.REDIS_PORT || 6379);
 
-declare global {
-  // Allow global var in Next.js hot reload
-  // eslint-disable-next-line no-var
-  var _redis: Redis | undefined;
-}
-
-if (!global._redis) {
-  global._redis = new Redis({
+  client = new Redis({
     host: redisHost,
     port: redisPort,
-    // Uncomment below if your Redis uses TLS (e.g. MemoryDB or some ElastiCache configs)
-    // tls: {}
+    // tls: {}  // uncomment if using TLS
+  });
+
+  client.on("error", (err) => {
+    console.warn("[Redis] Connection failed:", err.message);
   });
 }
-
-client = global._redis;
 
 export default client;

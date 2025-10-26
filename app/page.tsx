@@ -5,17 +5,25 @@ import redis from "@/lib/redis";
 export const revalidate = 300;
 
 export default async function Home() {
-  // Try fetching leaderboard data from Redis
   const cacheKey = "leaderboard_data";
   let data;
 
-  const cached = await redis.get(cacheKey);
-  if (cached) {
-    data = JSON.parse(cached);
-  } else {
-    data = leaderboard as { name: string; points: number }[];
-    // Save in Redis cache
-    await redis.set(cacheKey, JSON.stringify(data), "EX", 300); // expires in 5 mins
+  try {
+    if (redis) {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        data = JSON.parse(cached);
+      } else {
+        data = leaderboard;
+        await redis.set(cacheKey, JSON.stringify(data), "EX", 300);
+      }
+    } else {
+      console.warn("Redis not initialized, using local data");
+      data = leaderboard;
+    }
+  } catch (err) {
+    console.warn("Redis unavailable:", (err as Error).message);
+    data = leaderboard;
   }
 
   return (
