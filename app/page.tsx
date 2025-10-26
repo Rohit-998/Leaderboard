@@ -1,32 +1,41 @@
 import { Leaderboard } from "@/components/leaderboard";
 import redis from "@/lib/redis";
 
-export const revalidate = 300;
+export const revalidate = 300; // ISR
 
 export default async function Home() {
   const cacheKey = "leaderboard_data";
-  let data;
 
   if (!redis) {
-    throw new Error("Redis not initialized");
+    console.warn("Redis not initialized at build time, returning empty data");
+    return (
+      <main className="flex flex-col items-center justify-start py-20">
+        <Leaderboard data={[]} />
+      </main>
+    );
   }
 
   try {
     const cached = await redis.get(cacheKey);
 
     if (!cached) {
-      throw new Error(`No data found in Redis for key: ${cacheKey}`);
+      throw new Error(`Missing Redis key: ${cacheKey}`);
     }
 
-    data = JSON.parse(cached);
+    const data = JSON.parse(cached);
+
+    return (
+      <main className="flex flex-col items-center justify-start py-20">
+        <Leaderboard data={data} />
+      </main>
+    );
   } catch (err) {
     console.error("Redis error:", err);
-    throw new Error("Redis unavailable or missing data");
+    return (
+      <main className="flex flex-col items-center justify-start py-20">
+        <Leaderboard data={[]} />
+        <p className="text-red-500 mt-6">Redis unavailable or bad data</p>
+      </main>
+    );
   }
-
-  return (
-    <main className="flex flex-col items-center justify-start py-20">
-      <Leaderboard data={data} />
-    </main>
-  );
 }

@@ -1,21 +1,18 @@
 import Redis from "ioredis";
 
-let client: Redis | null = null;
+const REDIS_HOST = process.env.REDIS_HOST;
+const REDIS_PORT = process.env.REDIS_PORT || "6379";
 
-// Only initialize Redis if we are NOT in build-time (like in Docker build)
-if (process.env.NODE_ENV !== "production" || process.env.REDIS_HOST) {
-  const redisHost = process.env.REDIS_HOST!;
-  const redisPort = Number(process.env.REDIS_PORT || 6379);
+let redis: Redis | null = null;
 
-  client = new Redis({
-    host: redisHost,
-    port: redisPort,
-    // tls: {}  // uncomment if using TLS
+if (REDIS_HOST) {
+  redis = new Redis({
+    host: REDIS_HOST,
+    port: Number(REDIS_PORT),
+    tls: {}, // Required for AWS ElastiCache
   });
-
-  client.on("error", (err) => {
-    console.warn("[Redis] Connection failed:", err.message);
-  });
+} else {
+  console.warn("Redis host not found — running without Redis");
 }
 
-export default client;
+export default redis;
