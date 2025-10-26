@@ -1,5 +1,4 @@
 import { Leaderboard } from "@/components/leaderboard";
-import leaderboard from "../leaderboard.json";
 import redis from "@/lib/redis";
 
 export const revalidate = 300;
@@ -8,22 +7,21 @@ export default async function Home() {
   const cacheKey = "leaderboard_data";
   let data;
 
+  if (!redis) {
+    throw new Error("Redis not initialized");
+  }
+
   try {
-    if (redis) {
-      const cached = await redis.get(cacheKey);
-      if (cached) {
-        data = JSON.parse(cached);
-      } else {
-        data = leaderboard;
-        await redis.set(cacheKey, JSON.stringify(data), "EX", 300);
-      }
-    } else {
-      console.warn("Redis not initialized, using local data");
-      data = leaderboard;
+    const cached = await redis.get(cacheKey);
+
+    if (!cached) {
+      throw new Error(`No data found in Redis for key: ${cacheKey}`);
     }
+
+    data = JSON.parse(cached);
   } catch (err) {
-    console.warn("Redis unavailable:", (err as Error).message);
-    data = leaderboard;
+    console.error("Redis error:", err);
+    throw new Error("Redis unavailable or missing data");
   }
 
   return (
