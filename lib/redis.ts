@@ -3,16 +3,24 @@ import Redis from "ioredis";
 const redisHost = process.env.REDIS_HOST!;
 const redisPort = Number(process.env.REDIS_PORT || 6379);
 
-// Create a singleton Redis client (important for hot reloads)
-let redis: Redis | null = null;
+// Make a singleton Redis instance safely
+let client: Redis;
 
-if (!redis) {
-  redis = new Redis({
+declare global {
+  // Allow global var in Next.js hot reload
+  // eslint-disable-next-line no-var
+  var _redis: Redis | undefined;
+}
+
+if (!global._redis) {
+  global._redis = new Redis({
     host: redisHost,
     port: redisPort,
-    // You can add optional TLS if your ElastiCache requires it:
+    // Uncomment below if your Redis uses TLS (e.g. MemoryDB or some ElastiCache configs)
     // tls: {}
   });
 }
 
-export default redis;
+client = global._redis;
+
+export default client;
