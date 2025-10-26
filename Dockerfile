@@ -3,16 +3,16 @@ WORKDIR /app
 
 ENV NPM_CONFIG_LEGACY_PEER_DEPS=true
 
-# Install dependencies
 COPY package*.json ./
 RUN npm ci
 
-# Copy app sources and build
 COPY . .
 RUN npm run build
 
-# Expose container port
 EXPOSE 3000
+
+# Install curl for ECS health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Start Next.js server on 0.0.0.0
 CMD ["npm", "run", "start", "--", "-H", "0.0.0.0"]
